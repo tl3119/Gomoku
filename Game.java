@@ -13,7 +13,7 @@ public class Game{
 
 class Gomo{
     static final int boardSize = 15;
-    static final int cellSize = 35;
+    static final int cellSize = 32;
     JFrame jf;
     JPanel boardPanel;
     Container contentPane;
@@ -30,11 +30,23 @@ class Gomo{
             for (int j = 0; j < boardSize; j++) {
                 JButton button = new JButton();
                 button.setPreferredSize(new Dimension(cellSize, cellSize));
+                button.addActionListener(new buttonPressed());
                 boardPanel.add(button);
             }
         }
 
         jf.add(boardPanel);
         jf.setVisible(true);
+    }
+}
+
+class buttonPressed implements ActionListener{
+    @Override
+    public void actionPerformed(ActionEvent e){
+        JButton source = (JButton) e.getSource();
+        source.setOpaque(true);
+        source.setContentAreaFilled(true);
+        source.setBorderPainted(false);
+        source.setBackground(Color.BLACK);
     }
 }
