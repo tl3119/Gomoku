@@ -81,7 +81,7 @@ class BoardClickListener extends MouseAdapter {
         int x = (e.getX() + Gomo.cellSize / 2) / Gomo.cellSize;
         int y = (e.getY() + Gomo.cellSize / 2) / Gomo.cellSize;
 
-        if (((BoardPanel) e.getSource()).board[x][y] == 0) {
+        if (x < Gomo.boardSize && y < Gomo.boardSize && ((BoardPanel) e.getSource()).board[x][y] == 0) {
             int stoneValue = blackTurn ? 1 : 2;
             ((BoardPanel) e.getSource()).board[x][y] = stoneValue;
             blackTurn = !blackTurn;
