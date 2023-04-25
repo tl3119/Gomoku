@@ -1,8 +1,11 @@
+package Gomokuuu;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.net.*;
 import java.io.*;
+import java.util.Scanner;
 
 public class Game{
     public static void main(String[] args) throws IOException {
@@ -17,6 +20,10 @@ class Gomo{
     JFrame jf;
     JPanel boardPanel;
     Container contentPane;
+    public boolean[][] isPressedArray;
+    JTextArea textShown;
+    JPanel jp2;
+    static JTextField text;
 
     void setUp() {
         jf = new JFrame("Gomoku Game!");
@@ -26,21 +33,41 @@ class Gomo{
 
         // Initialize the board panel
         boardPanel = new JPanel(new GridLayout(boardSize, boardSize));
+        isPressedArray = new boolean[15][15];
         for (int i = 0; i < boardSize; i++) {
             for (int j = 0; j < boardSize; j++) {
+                isPressedArray[i][j] = false;
                 JButton button = new JButton();
                 button.setPreferredSize(new Dimension(cellSize, cellSize));
-                button.addActionListener(new buttonPressed());
+                button.addActionListener(new buttonPressed(i, j));
                 boardPanel.add(button);
             }
         }
 
-        jf.add(boardPanel);
+        textShown = new JTextArea(16, 18);
+        textShown.setEditable(false);
+        jp2 = new JPanel();
+        jp2.setLayout(new BorderLayout());
+        jp2.add(boardPanel, BorderLayout.SOUTH);
+        jp2.add(textShown, BorderLayout.NORTH);
+
+        jf.add(jp2);
         jf.setVisible(true);
+
+        try {
+            Socket s = new Socket("localhost", 5190);
+            Scanner input = new Scanner(s.getInputStream());
+        } catch (IOException ignored) {}
     }
 }
 
-class buttonPressed implements ActionListener{
+class buttonPressed extends Gomo implements ActionListener{
+    int i;
+    int j;
+    buttonPressed(int row, int col){
+        i = row;
+        j = col;
+    }
     @Override
     public void actionPerformed(ActionEvent e){
         JButton source = (JButton) e.getSource();
@@ -48,5 +75,6 @@ class buttonPressed implements ActionListener{
         source.setContentAreaFilled(true);
         source.setBorderPainted(false);
         source.setBackground(Color.BLACK);
+        isPressedArray[i][j] = true;
     }
 }
