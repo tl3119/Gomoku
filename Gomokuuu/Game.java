@@ -3,6 +3,10 @@ package Gomokuuu;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.net.Socket;
+import java.util.Scanner;
 
 public class Game {
     public static void main(String[] args) {
@@ -23,6 +27,9 @@ class Gomo {
     static final int cellSize = 32;
     JFrame jf;
     BoardPanel boardPanel;
+    Scanner input;
+    PrintStream output;
+    Socket socket;
 
     void setUp() {
         jf = new JFrame("Gomoku Game!");
@@ -35,22 +42,38 @@ class Gomo {
         Game.whiteStone = new ImageIcon("images/white_stone.png");
 
         // Initialize the board panel
-        boardPanel = new BoardPanel();
+        boardPanel = new BoardPanel(this);
         boardPanel.addMouseListener(new BoardClickListener());
 
         jf.add(boardPanel);
         jf.setVisible(true);
+
+        try {
+            socket = new Socket("localhost", 5190);
+            input = new Scanner(socket.getInputStream());
+            output = new PrintStream(socket.getOutputStream());
+        } catch (IOException ignored) {}
+    }
+
+    void sendMove(int x, int y) {
+        output.println(x + "," + y);
     }
 }
 
 class BoardPanel extends JPanel {
-    int[][] board;
+    static int[][] board;
+    boolean isWin = false;
+    Gomo gomo;
 
-    public BoardPanel() {
+    public BoardPanel(Gomo gomo) {
         super();
         board = new int[Gomo.boardSize][Gomo.boardSize];
+        this.gomo = gomo;
     }
 
+    public Gomo getGomo(){
+        return gomo;
+    }
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -70,9 +93,32 @@ class BoardPanel extends JPanel {
                 }
             }
         }
+        checkForWin();
+        if (isWin) {
+            System.out.println("You win!");
+        }
+    }
+    public void checkForWin(){
+        for (int i = 0; i < Gomo.boardSize; i++) {
+            for (int j = 0; j < Gomo.boardSize; j++) {
+                if(board[i][j] == 1 && board[i][j+1] == 1&&
+                        board[i][j+2] == 1 && board[i][j+3] == 1 &&
+                        board[i][j+4] == 1){
+                    isWin = true;
+                    return;
+                }
+                if (board[j][i] == 1 && board[j+1][i] == 1 &&
+                        board[j+2][i] == 1 && board[j+3][i] == 1 &&
+                        board[j+4][i] == 1) {
+                    isWin = true;
+                    return;
+                }
+            }
+        }
     }
 }
 
+// MouseClick
 class BoardClickListener extends MouseAdapter {
     private boolean blackTurn = true;
 
@@ -86,6 +132,10 @@ class BoardClickListener extends MouseAdapter {
             ((BoardPanel) e.getSource()).board[x][y] = stoneValue;
             blackTurn = !blackTurn;
             ((BoardPanel) e.getSource()).repaint();
+
+            // Send the move to the server
+            Gomo g = ((BoardPanel) e.getSource()).getGomo();
+            g.sendMove(x, y);
         }
     }
 }
