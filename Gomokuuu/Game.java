@@ -60,15 +60,33 @@ class Gomo {
     }
 }
 
-class BoardPanel extends JPanel {
+class BoardPanel extends JPanel{
     static int[][] board;
     boolean isWin = false;
     Gomo gomo;
+    static int xCord;
+    static int yCord;
 
     public BoardPanel(Gomo gomo) {
         super();
         board = new int[Gomo.boardSize][Gomo.boardSize];
         this.gomo = gomo;
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int x = (e.getX() + Gomo.cellSize / 2) / Gomo.cellSize;
+                int y = (e.getY() + Gomo.cellSize / 2) / Gomo.cellSize;
+
+                if (x < Gomo.boardSize && y < Gomo.boardSize && ((BoardPanel) e.getSource()).board[x][y] == 0) {
+                    ((BoardPanel) e.getSource()).xCord = x;
+                    ((BoardPanel) e.getSource()).yCord = y;
+                    ((BoardPanel) e.getSource()).repaint();
+                    // Send the move to the server
+                    Gomo g = ((BoardPanel) e.getSource()).getGomo();
+                    g.sendMove(x, y);
+                }
+            }
+        });
     }
 
     public Gomo getGomo(){
@@ -93,6 +111,8 @@ class BoardPanel extends JPanel {
                 }
             }
         }
+        // If there is a received move, draw the stone image on the board
+
         checkForWin();
         if (isWin) {
             System.out.println("You win!");
@@ -116,6 +136,10 @@ class BoardPanel extends JPanel {
             }
         }
     }
+    public void updateBoard(int[][] newBoard) {
+        board = newBoard;
+        repaint();
+    }
 }
 
 // MouseClick
@@ -128,11 +152,12 @@ class BoardClickListener extends MouseAdapter {
         int y = (e.getY() + Gomo.cellSize / 2) / Gomo.cellSize;
 
         if (x < Gomo.boardSize && y < Gomo.boardSize && ((BoardPanel) e.getSource()).board[x][y] == 0) {
+            ((BoardPanel) e.getSource()).xCord = x;
+            ((BoardPanel) e.getSource()).yCord = y;
             int stoneValue = blackTurn ? 1 : 2;
             ((BoardPanel) e.getSource()).board[x][y] = stoneValue;
             blackTurn = !blackTurn;
             ((BoardPanel) e.getSource()).repaint();
-
             // Send the move to the server
             Gomo g = ((BoardPanel) e.getSource()).getGomo();
             g.sendMove(x, y);
