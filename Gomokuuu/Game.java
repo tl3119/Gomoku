@@ -2,7 +2,8 @@ package Gomokuuu;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.Socket;
@@ -30,6 +31,7 @@ class Gomo {
     Scanner input;
     PrintStream output;
     Socket socket;
+    int currentPlayer;
 
     void setUp() {
         jf = new JFrame("Gomoku Game!");
@@ -52,115 +54,87 @@ class Gomo {
             socket = new Socket("localhost", 5190);
             input = new Scanner(socket.getInputStream());
             output = new PrintStream(socket.getOutputStream());
-        } catch (IOException ignored) {}
+            currentPlayer = Integer.parseInt(input.nextLine());
+
+            new Thread(new MoveReceiver()).start();
+        } catch (IOException ignored) {
+        }
     }
 
     void sendMove(int x, int y) {
         output.println(x + "," + y);
     }
-}
 
-class BoardPanel extends JPanel{
-    static int[][] board;
-    boolean isWin = false;
-    Gomo gomo;
-    static int xCord;
-    static int yCord;
-
-    public BoardPanel(Gomo gomo) {
-        super();
-        board = new int[Gomo.boardSize][Gomo.boardSize];
-        this.gomo = gomo;
-        addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                int x = (e.getX() + Gomo.cellSize / 2) / Gomo.cellSize;
-                int y = (e.getY() + Gomo.cellSize / 2) / Gomo.cellSize;
-
-                if (x < Gomo.boardSize && y < Gomo.boardSize && ((BoardPanel) e.getSource()).board[x][y] == 0) {
-                    ((BoardPanel) e.getSource()).xCord = x;
-                    ((BoardPanel) e.getSource()).yCord = y;
-                    ((BoardPanel) e.getSource()).repaint();
-                    // Send the move to the server
-                    Gomo g = ((BoardPanel) e.getSource()).getGomo();
-                    g.sendMove(x, y);
-                }
-            }
-        });
-    }
-
-    public Gomo getGomo(){
-        return gomo;
-    }
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-        int gridSize = Gomo.boardSize * Gomo.cellSize;
-        g.setColor(Color.BLACK);
-        for (int i = 0; i <= Gomo.boardSize; i++) {
-            g.drawLine(i * Gomo.cellSize, 0, i * Gomo.cellSize, gridSize);
-            g.drawLine(0, i * Gomo.cellSize, gridSize, i * Gomo.cellSize);
-        }
-
-        for (int i = 0; i < Gomo.boardSize; i++) {
-            for (int j = 0; j < Gomo.boardSize; j++) {
-                if (board[i][j] == 1) {
-                    g.drawImage(Game.blackStone.getImage(), i * Gomo.cellSize - Game.blackStone.getIconWidth() / 2, j * Gomo.cellSize - Game.blackStone.getIconHeight() / 2, null);
-                } else if (board[i][j] == 2) {
-                    g.drawImage(Game.whiteStone.getImage(), i * Gomo.cellSize - Game.whiteStone.getIconWidth() / 2, j * Gomo.cellSize - Game.whiteStone.getIconHeight() / 2, null);
-                }
-            }
-        }
-        // If there is a received move, draw the stone image on the board
-
-        checkForWin();
-        if (isWin) {
-            System.out.println("You win!");
-        }
-    }
-    public void checkForWin(){
-        for (int i = 0; i < Gomo.boardSize; i++) {
-            for (int j = 0; j < Gomo.boardSize; j++) {
-                if(board[i][j] == 1 && board[i][j+1] == 1&&
-                        board[i][j+2] == 1 && board[i][j+3] == 1 &&
-                        board[i][j+4] == 1){
-                    isWin = true;
-                    return;
-                }
-                if (board[j][i] == 1 && board[j+1][i] == 1 &&
-                        board[j+2][i] == 1 && board[j+3][i] == 1 &&
-                        board[j+4][i] == 1) {
-                    isWin = true;
-                    return;
+    class MoveReceiver implements Runnable {
+        @Override
+        public void run() {
+            while (true) {
+                if (input.hasNextLine()) {
+                    String[] move = input.nextLine().split(",");
+                    int x = Integer.parseInt(move[0]);
+                    int y = Integer.parseInt(move[1]);
+                    int stoneValue = (currentPlayer == 1) ? 2 : 1;
+                    boardPanel.updateBoard(x, y, stoneValue);
                 }
             }
         }
     }
-    public void updateBoard(int[][] newBoard) {
-        board = newBoard;
-        repaint();
-    }
-}
-
-// MouseClick
-class BoardClickListener extends MouseAdapter {
-    private boolean blackTurn = true;
-
-    @Override
-    public void mouseClicked(MouseEvent e) {
-        int x = (e.getX() + Gomo.cellSize / 2) / Gomo.cellSize;
-        int y = (e.getY() + Gomo.cellSize / 2) / Gomo.cellSize;
-
-        if (x < Gomo.boardSize && y < Gomo.boardSize && ((BoardPanel) e.getSource()).board[x][y] == 0) {
-            ((BoardPanel) e.getSource()).xCord = x;
-            ((BoardPanel) e.getSource()).yCord = y;
-            int stoneValue = blackTurn ? 1 : 2;
-            ((BoardPanel) e.getSource()).board[x][y] = stoneValue;
-            blackTurn = !blackTurn;
-            ((BoardPanel) e.getSource()).repaint();
-            // Send the move to the server
-            Gomo g = ((BoardPanel) e.getSource()).getGomo();
-            g.sendMove(x, y);
+    class BoardPanel extends JPanel {
+        int[][] board;
+        Gomo gomo;
+    
+        public BoardPanel(Gomo gomo) {
+            super();
+            board = new int[Gomo.boardSize][Gomo.boardSize];
+            this.gomo = gomo;
+        }
+    
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            int gridSize = Gomo.boardSize * Gomo.cellSize;
+            g.setColor(Color.BLACK);
+            for (int i = 0; i <= Gomo.boardSize; i++) {
+                g.drawLine(i * Gomo.cellSize, 0, i * Gomo.cellSize, gridSize);
+                g.drawLine(0, i * Gomo.cellSize, gridSize, i * Gomo.cellSize);
+            }
+    
+            for (int i = 0; i < Gomo.boardSize; i++) {
+                for (int j = 0; j < Gomo.boardSize; j++) {
+                    if (board[i][j] == 1) {
+                        g.drawImage(Game.blackStone.getImage(), i * Gomo.cellSize - Game.blackStone.getIconWidth() / 2, j * Gomo.cellSize - Game.blackStone.getIconHeight() / 2, null);
+                    } else if (board[i][j] == 2) {
+                        g.drawImage(Game.whiteStone.getImage(), i * Gomo.cellSize - Game.whiteStone.getIconWidth() / 2, j * Gomo.cellSize - Game.whiteStone.getIconHeight() / 2, null);
+                    }
+                }
+            }
+        }
+    
+        public void updateBoard(int x, int y, int stoneValue) {
+            board[x][y] = stoneValue;
+            repaint();
         }
     }
+    class BoardClickListener extends MouseAdapter {
+        private boolean blackTurn = true;
+    
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            int x = (e.getX() + Gomo.cellSize / 2) / Gomo.cellSize;
+            int y = (e.getY() + Gomo.cellSize / 2) / Gomo.cellSize;
+    
+            if (x < Gomo.boardSize && y < Gomo.boardSize && ((BoardPanel) e.getSource()).board[x][y] == 0) {
+                int stoneValue = blackTurn ? 1 : 2;
+                ((BoardPanel) e.getSource()).updateBoard(x, y, stoneValue);
+                blackTurn = !blackTurn;
+    
+                // Send the move to the server
+                Gomo g = ((BoardPanel) e.getSource()).gomo;
+                g.sendMove(x, y);
+            }
+        }
+    }
+    
+
 }
+
