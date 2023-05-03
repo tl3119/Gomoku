@@ -81,8 +81,18 @@ class Gomo {
                     int x = Integer.parseInt(move[0]);
                     int y = Integer.parseInt(move[1]);
                     int z = Integer.parseInt(move[2]);
-                    int stoneValue = (currentPlayer == 1) ? 2 : 1;
-                    boardPanel.updateBoard(x, y, stoneValue, z);
+                    int w = Integer.parseInt(move[3]);
+                    if(w == 0){
+                        int stoneValue = (currentPlayer == 1) ? 2 : 1;
+                        boardPanel.updateBoard(x, y, stoneValue, z);
+                    }
+                    else if(w == currentPlayer){
+                        System.out.println("You win!");
+                        break;
+                    }else{
+                        System.out.println("You lose!");
+                        break;
+                    }
                 }
             }
         }
