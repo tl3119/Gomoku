@@ -34,7 +34,6 @@ class Gomo {
     Socket socket;
     int currentPlayer;
     boolean isPlayer1Turn;
-    boolean isWaiting;
     boolean isPlayer2Turn;
 
     void setUp() {
@@ -64,17 +63,13 @@ class Gomo {
             currentPlayer = Integer.parseInt(input.nextLine());
             isPlayer1Turn = currentPlayer == 1;
             isPlayer2Turn = currentPlayer == 2;
-//            isPlayer1Turn = true;
-//            isPlayer2Turn = false;
-            //isWaiting = !isPlayer1Turn;
-
             new Thread(new MoveReceiver()).start();
         } catch (IOException ignored) {
         }
     }
 
-    void sendMove(int x, int y, int z) {
-        output.println(x + "," + y + "," + z);
+    void sendMove(int x, int y, int z, int w) {
+        output.println(x + "," + y + "," + z + "," + w);
     }
 
     class MoveReceiver implements Runnable {
@@ -88,8 +83,6 @@ class Gomo {
                     int z = Integer.parseInt(move[2]);
                     int stoneValue = (currentPlayer == 1) ? 2 : 1;
                     boardPanel.updateBoard(x, y, stoneValue, z);
-//                    isWaiting = false;
-//                    isPlayer1Turn = !isPlayer1Turn;
                 }
             }
         }
@@ -137,6 +130,52 @@ class Gomo {
             }
         }
     }
+    private boolean checkWin(int x, int y, int[][] board, int playerId) {
+        int row = board.length;
+        int col = board[0].length;
+
+        // Check horizontal
+        int count = 1;
+        for (int i = y - 1; i >= 0 && board[x][i] == playerId; i--) {
+            count++;
+        }
+        for (int i = y + 1; i < col && board[x][i] == playerId; i++) {
+            count++;
+        }
+        if (count >= 5) return true;
+
+        // Check vertical
+        count = 1;
+        for (int i = x - 1; i >= 0 && board[i][y] == playerId; i--) {
+            count++;
+        }
+        for (int i = x + 1; i < row && board[i][y] == playerId; i++) {
+            count++;
+        }
+        if (count >= 5) return true;
+
+        // Check diagonal
+        count = 1;
+        for (int i = x - 1, j = y - 1; i >= 0 && j >= 0 && board[i][j] == playerId; i--, j--) {
+            count++;
+        }
+        for (int i = x + 1, j = y + 1; i < row && j < col && board[i][j] == playerId; i++, j++) {
+            count++;
+        }
+        if (count >= 5) return true;
+
+        // Check anti-diagonal
+        count = 1;
+        for (int i = x - 1, j = y + 1; i >= 0 && j < col && board[i][j] == playerId; i--, j++) {
+            count++;
+        }
+        for (int i = x + 1, j = y - 1; i < row && j >= 0 && board[i][j] == playerId; i++, j--) {
+            count++;
+        }
+        if (count >= 5) return true;
+
+        return false;
+    }
     class BoardClickListener extends MouseAdapter {
         private boolean blackTurn = true;
     
@@ -145,50 +184,27 @@ class Gomo {
             int x = (e.getX() + Gomo.cellSize / 2) / Gomo.cellSize;
             int y = (e.getY() + Gomo.cellSize / 2) / Gomo.cellSize;
             if (x < Gomo.boardSize && y < Gomo.boardSize && ((BoardPanel) e.getSource()).board[x][y] == 0) {
-                if(currentPlayer == 1 && isPlayer1Turn){
-                    int stoneValue = (currentPlayer == 1) ? 1 : 2;
-                    ((BoardPanel) e.getSource()).updateBoard(x, y, stoneValue, 1);
-                    sendMove(x, y, 1);
-                    System.out.println("FIRST CLICK: " + isPlayer1Turn);
-                    System.out.println("after CLICK: " + isPlayer1Turn);
-
-                }else if(currentPlayer == 2 && isPlayer2Turn){
-                    int stoneValue = (currentPlayer == 1) ? 1 : 2;
-                    ((BoardPanel) e.getSource()).updateBoard(x, y, stoneValue, 2);
-                    sendMove(x, y, 2);
-                    System.out.println("FIRST CLICK: " + isPlayer2Turn);
-                }else{
-                    isPlayer1Turn = isPlayer1Turn;
-                    isPlayer2Turn = isPlayer2Turn;
-                }
-//                if (currentPlayer == 1) {
-//                    isPlayer1Turn = false;
-//                    isPlayer2Turn = true;
+                if (currentPlayer == 1 && isPlayer1Turn) {
+                    ((BoardPanel) e.getSource()).updateBoard(x, y, 1, 1);
+                    if(checkWin(x,y,((BoardPanel) e.getSource()).board, 1)){
+                        sendMove(x, y, 1, 1);
+                    }else{
+                        sendMove(x, y, 1, 0);
+                    }
+//                    System.out.println("FIRST CLICK: " + isPlayer1Turn);
 //                    System.out.println("after CLICK: " + isPlayer1Turn);
-//                } else {
-//                    isPlayer1Turn = true;
-//                    isPlayer2Turn = false;
-//                }
+
+                } else if (currentPlayer == 2 && isPlayer2Turn) {
+                    ((BoardPanel) e.getSource()).updateBoard(x, y, 2, 2);
+                    if(checkWin(x,y,((BoardPanel) e.getSource()).board, 2)){
+                        sendMove(x, y, 2, 2);
+                    }else{
+                        sendMove(x, y, 2, 0);
+                    }
+//                    System.out.println("FIRST CLICK: " + isPlayer2Turn);
+                } else {
+                }
             }
-    
-//            if (x < Gomo.boardSize && y < Gomo.boardSize && ((BoardPanel) e.getSource()).board[x][y] == 0 && currentPlayer == 1 && isPlayer1Turn) {
-////                int stoneValue = blackTurn ? 1 : 2;
-////                ((BoardPanel) e.getSource()).updateBoard(x, y, stoneValue);
-////                blackTurn = !blackTurn;
-////
-////                // Send the move to the server
-////                Gomo g = ((BoardPanel) e.getSource()).gomo;
-////                g.sendMove(x, y);
-//                boardPanel.updateBoard(x, y, 1);
-//                sendMove(x, y);
-//                isPlayer1Turn = false;
-//                isPlayer2Turn = true;
-//            }else if(x < Gomo.boardSize && y < Gomo.boardSize && ((BoardPanel) e.getSource()).board[x][y] == 0 && currentPlayer == 2 && isPlayer2Turn){
-//                boardPanel.updateBoard(x, y, 2);
-//                sendMove(x, y);
-//                isPlayer2Turn = false;
-//                isPlayer1Turn = true;
-//            }
         }
     }
 }
