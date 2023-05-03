@@ -87,10 +87,10 @@ class Gomo {
                         boardPanel.updateBoard(x, y, stoneValue, z);
                     }
                     else if(w == currentPlayer){
-                        System.out.println("You win!");
+                        JOptionPane.showMessageDialog(null, "Player "+w +" win", "Game over", JOptionPane.INFORMATION_MESSAGE);
                         break;
                     }else{
-                        System.out.println("You lose!");
+                        JOptionPane.showMessageDialog(null, "Player "+currentPlayer +" lose", "Game over", JOptionPane.INFORMATION_MESSAGE);
                         break;
                     }
                 }
@@ -137,6 +137,13 @@ class Gomo {
             }else{
                 isPlayer2Turn = false;
                 isPlayer1Turn = true;
+            }
+            if (checkWin(x, y, board, z)) {
+                String winnerMessage = (stoneValue == z) ? "Player "+ z +" win!" : "Player " + z + " lose.";
+                JOptionPane.showMessageDialog(null, winnerMessage, "Game over", JOptionPane.INFORMATION_MESSAGE);
+                // reset the board
+                // board = new int[Gomo.boardSize][Gomo.boardSize];
+                repaint();
             }
         }
     }
