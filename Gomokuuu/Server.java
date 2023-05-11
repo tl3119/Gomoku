@@ -8,7 +8,7 @@ import java.util.Scanner;
 
 public class Server {
     public static final int PORT = 5190;
-    public static final int NUM_PLAYERS = 2;
+    public static final int MAX_PLAYERS = 2;
 
     private Socket[] players;
     private ServerSocket serverSocket;
@@ -21,9 +21,9 @@ public class Server {
         try {
             serverSocket = new ServerSocket(PORT);
             System.out.println("Gomoku server started at port " + PORT);
-            players = new Socket[NUM_PLAYERS];
+            players = new Socket[MAX_PLAYERS];
 
-            for (int i = 0; i < NUM_PLAYERS; i++) {
+            for (int i = 0; i < MAX_PLAYERS; i++) {
                 players[i] = serverSocket.accept();
                 System.out.println("Player " + (i + 1) + " connected");
 
@@ -55,6 +55,7 @@ public class Server {
                 Scanner input = new Scanner(playerSocket.getInputStream());
 
                 while (true) {
+                    // receive input from client
                     String move = input.nextLine();
                     System.out.println("Player " + playerNumber + " move: " + move);
                     sendMove(move);
@@ -64,6 +65,7 @@ public class Server {
             }
         }
 
+        // send move to another client
         private void sendMove(String move) {
             for (Socket player : players) {
                 try {

@@ -46,8 +46,7 @@ class Gomo {
         Game.blackStone = new ImageIcon("/Users/liutianzuo/Desktop/Gomoku/images/black_stone.png");
         Game.whiteStone = new ImageIcon("/Users/liutianzuo/Desktop/Gomoku/images/white_stone.png");
 
-        File file = new File("images/black_stone.png");
-        System.out.println(file.getAbsolutePath());
+        // use this path if you run in any Java IDE: images/black_stone.png
 
         // Initialize the board panel
         boardPanel = new BoardPanel(this);
@@ -57,22 +56,25 @@ class Gomo {
         jf.setVisible(true);
 
         try {
+            // networking
             socket = new Socket("localhost", 5190);
             input = new Scanner(socket.getInputStream());
             output = new PrintStream(socket.getOutputStream());
             currentPlayer = Integer.parseInt(input.nextLine());
-            isPlayer1Turn = currentPlayer == 1;
-            isPlayer2Turn = currentPlayer == 2;
+            isPlayer1Turn = true;
+            isPlayer2Turn = false;
             new Thread(new MoveReceiver()).start();
         } catch (IOException ignored) {
         }
     }
 
+    // clients send move to the server
     void sendMove(int x, int y, int z, int w) {
         output.println(x + "," + y + "," + z + "," + w);
     }
 
     class MoveReceiver implements Runnable {
+        // use thread concurrency
         @Override
         public void run() {
             while (true) {
@@ -106,7 +108,8 @@ class Gomo {
             board = new int[Gomo.boardSize][Gomo.boardSize];
             this.gomo = gomo;
         }
-    
+
+        // use Graphics to draw the board
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
@@ -127,7 +130,8 @@ class Gomo {
                 }
             }
         }
-    
+
+        // update board information
         public void updateBoard(int x, int y, int stoneValue, int z) {
             board[x][y] = stoneValue;
             repaint();
@@ -141,8 +145,11 @@ class Gomo {
             if (checkWin(x, y, board, z)) {
                 String winnerMessage = (stoneValue == z) ? "Player "+ z +" win!" : "Player " + z + " lose.";
                 JOptionPane.showMessageDialog(null, winnerMessage, "Game over", JOptionPane.INFORMATION_MESSAGE);
-                // reset the board
-                // board = new int[Gomo.boardSize][Gomo.boardSize];
+                repaint();
+            }
+            if(checkDraw(board)){
+                String drawMessage = "This is a draw game!";
+                JOptionPane.showMessageDialog(null, drawMessage, "Game over", JOptionPane.INFORMATION_MESSAGE);
                 repaint();
             }
         }
@@ -159,7 +166,8 @@ class Gomo {
         for (int i = y + 1; i < col && board[x][i] == playerId; i++) {
             count++;
         }
-        if (count >= 5) return true;
+        if (count >= 5)
+            return true;
 
         // Check vertical
         count = 1;
@@ -169,7 +177,8 @@ class Gomo {
         for (int i = x + 1; i < row && board[i][y] == playerId; i++) {
             count++;
         }
-        if (count >= 5) return true;
+        if (count >= 5)
+            return true;
 
         // Check diagonal
         count = 1;
@@ -179,7 +188,8 @@ class Gomo {
         for (int i = x + 1, j = y + 1; i < row && j < col && board[i][j] == playerId; i++, j++) {
             count++;
         }
-        if (count >= 5) return true;
+        if (count >= 5)
+            return true;
 
         // Check anti-diagonal
         count = 1;
@@ -189,12 +199,22 @@ class Gomo {
         for (int i = x + 1, j = y - 1; i < row && j >= 0 && board[i][j] == playerId; i++, j--) {
             count++;
         }
-        if (count >= 5) return true;
+        if (count >= 5)
+            return true;
 
         return false;
     }
+    private boolean checkDraw(int[][] board){
+        for(int i = 0; i < board.length; ++i){
+            for(int j = 0; j < board[i].length; ++j){
+                if(board[i][j] == 0){
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
     class BoardClickListener extends MouseAdapter {
-        private boolean blackTurn = true;
     
         @Override
         public void mousePressed(MouseEvent e) {
@@ -218,8 +238,6 @@ class Gomo {
                     }else{
                         sendMove(x, y, 2, 0);
                     }
-//                    System.out.println("FIRST CLICK: " + isPlayer2Turn);
-                } else {
                 }
             }
         }
