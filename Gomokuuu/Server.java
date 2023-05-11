@@ -35,6 +35,14 @@ public class Server {
 
                 new Thread(new GameHandler(players[i], i + 1)).start();
             }
+
+            if (players[0] != null && players[1] != null) {
+                PrintStream output1 = new PrintStream(players[0].getOutputStream());
+                PrintStream output2 = new PrintStream(players[1].getOutputStream());
+                output1.println("start");
+                output2.println("start");
+            }
+            
         } catch (IOException e) {
             e.printStackTrace();
         }

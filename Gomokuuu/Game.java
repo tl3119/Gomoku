@@ -35,6 +35,7 @@ class Gomo {
     int currentPlayer;
     boolean isPlayer1Turn;
     boolean isPlayer2Turn;
+    boolean isConnected = false;
 
     void setUp() {
         jf = new JFrame("Gomoku Game!");
@@ -43,8 +44,8 @@ class Gomo {
         jf.setLocationRelativeTo(null);
 
         // Load stone images
-        Game.blackStone = new ImageIcon("/Users/liutianzuo/Desktop/Gomoku/images/black_stone.png");
-        Game.whiteStone = new ImageIcon("/Users/liutianzuo/Desktop/Gomoku/images/white_stone.png");
+        Game.blackStone = new ImageIcon("images/black_stone.png");
+        Game.whiteStone = new ImageIcon("images/white_stone.png");
 
         // use this path if you run in any Java IDE: images/black_stone.png
 
@@ -63,6 +64,26 @@ class Gomo {
             currentPlayer = Integer.parseInt(input.nextLine());
             isPlayer1Turn = true;
             isPlayer2Turn = false;
+            if (currentPlayer == 1) {
+                JOptionPane waitDialog = new JOptionPane("Waiting for the second player to connect...", JOptionPane.INFORMATION_MESSAGE, JOptionPane.DEFAULT_OPTION, null, new Object[] {}, null);
+                JDialog waitWindow = waitDialog.createDialog("Waiting for the second player...");
+                waitWindow.setModal(false);
+                waitWindow.setVisible(true);
+    
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        while (!isConnected) {
+                            try {
+                                Thread.sleep(100);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        waitWindow.dispose();
+                    }
+                }).start();
+            }    
             new Thread(new MoveReceiver()).start();
         } catch (IOException ignored) {
         }
@@ -79,22 +100,29 @@ class Gomo {
         public void run() {
             while (true) {
                 if (input.hasNextLine()) {
-                    String[] move = input.nextLine().split(",");
-                    int x = Integer.parseInt(move[0]);
-                    int y = Integer.parseInt(move[1]);
-                    int z = Integer.parseInt(move[2]);
-                    int w = Integer.parseInt(move[3]);
-                    if(w == 0){
-                        int stoneValue = (currentPlayer == 1) ? 2 : 1;
-                        boardPanel.updateBoard(x, y, stoneValue, z);
+                    isConnected = true;
+                    String message = input.nextLine();
+                    if (message.equals("start")) {
+                        isConnected = true;
+                    } else {
+                        String[] move = message.split(",");
+                        int x = Integer.parseInt(move[0]);
+                        int y = Integer.parseInt(move[1]);
+                        int z = Integer.parseInt(move[2]);
+                        int w = Integer.parseInt(move[3]);
+                        if(w == 0){
+                            int stoneValue = (currentPlayer == 1) ? 2 : 1;
+                            boardPanel.updateBoard(x, y, stoneValue, z);
+                        }
+                        else if(w == currentPlayer){
+                            JOptionPane.showMessageDialog(null, "Player "+w +" win", "Game over", JOptionPane.INFORMATION_MESSAGE);
+                            break;
+                        }else{
+                            JOptionPane.showMessageDialog(null, "Player "+currentPlayer +" lose", "Game over", JOptionPane.INFORMATION_MESSAGE);
+                            break;
+                        }
                     }
-                    else if(w == currentPlayer){
-                        JOptionPane.showMessageDialog(null, "Player "+w +" win", "Game over", JOptionPane.INFORMATION_MESSAGE);
-                        break;
-                    }else{
-                        JOptionPane.showMessageDialog(null, "Player "+currentPlayer +" lose", "Game over", JOptionPane.INFORMATION_MESSAGE);
-                        break;
-                    }
+                    
                 }
             }
         }
@@ -218,6 +246,10 @@ class Gomo {
     
         @Override
         public void mousePressed(MouseEvent e) {
+            if (!isConnected) {
+                // Ignore the click if not connected
+                return;
+            }
             int x = (e.getX() + Gomo.cellSize / 2) / Gomo.cellSize;
             int y = (e.getY() + Gomo.cellSize / 2) / Gomo.cellSize;
             if (x < Gomo.boardSize && y < Gomo.boardSize && ((BoardPanel) e.getSource()).board[x][y] == 0) {
