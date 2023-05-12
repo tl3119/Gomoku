@@ -4,7 +4,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.Socket;
@@ -37,6 +36,8 @@ class Gomo {
     boolean isPlayer2Turn;
     boolean isConnected = false;
 
+    
+
     void setUp() {
         jf = new JFrame("Gomoku Game!");
         jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -61,31 +62,50 @@ class Gomo {
             socket = new Socket("localhost", 5190);
             input = new Scanner(socket.getInputStream());
             output = new PrintStream(socket.getOutputStream());
-            currentPlayer = Integer.parseInt(input.nextLine());
-            isPlayer1Turn = true;
-            isPlayer2Turn = false;
-            if (currentPlayer == 1) {
-                JOptionPane waitDialog = new JOptionPane("Waiting for the second player to connect...", JOptionPane.INFORMATION_MESSAGE, JOptionPane.DEFAULT_OPTION, null, new Object[] {}, null);
-                JDialog waitWindow = waitDialog.createDialog("Waiting for the second player...");
-                waitWindow.setModal(false);
-                waitWindow.setVisible(true);
-    
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        while (!isConnected) {
-                            try {
-                                Thread.sleep(100);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        waitWindow.dispose();
+            String username = JOptionPane.showInputDialog(jf, "Enter your username:");
+            String password = JOptionPane.showInputDialog(jf, "Enter your password:");
+            output.println("LOGIN:" + username + "," + password);
+
+            while (input.hasNextLine()) {
+                String response = input.nextLine();
+                if (response.equals("LOGIN_SUCCESS")) {
+                    isConnected = true;
+                    String nextLine = input.nextLine();
+                    if (nextLine.equals("start")) {
+                        continue;
                     }
-                }).start();
-            }    
-            new Thread(new MoveReceiver()).start();
-        } catch (IOException ignored) {
+                    currentPlayer = Integer.parseInt(nextLine);
+                    isPlayer1Turn = true;
+                    isPlayer2Turn = false;
+                    System.out.println(currentPlayer + "\n");
+                    if (currentPlayer == 1) {
+                        JOptionPane waitDialog = new JOptionPane("Waiting for the second player to connect...", JOptionPane.INFORMATION_MESSAGE, JOptionPane.DEFAULT_OPTION, null, new Object[] {}, null);
+                        JDialog waitWindow = waitDialog.createDialog("Waiting for the second player...");
+                        waitWindow.setModal(false);
+                        waitWindow.setVisible(true);
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                while (!isConnected) {
+                                    try {
+                                        Thread.sleep(100);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                waitWindow.dispose();
+                            }
+                        }).start();
+                    }    
+                    new Thread(new MoveReceiver()).start();
+                }else if (response.equals("LOGIN_FAILED")){
+                    JOptionPane.showMessageDialog(jf, "Login failed. Please try again.");
+                    System.exit(0);
+                }
+            }     
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(jf, "A network error occurred. Please try again.");
+            System.exit(1);
         }
     }
 
