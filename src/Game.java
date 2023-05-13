@@ -1,7 +1,7 @@
 // CS-UY 3913: Java and Web Design - Final Project
 // Team member: Tianzuo Liu(tl3119@nyu.edu), Tianyi Zhang(tz2020@nyu.edu)
 
-package Gomokuuu;
+package src;
 
 import javax.swing.*;
 import java.awt.*;
@@ -48,8 +48,6 @@ class Gomo {
         // Load stone images
         Game.blackStone = new ImageIcon("images/black_stone.png");
         Game.whiteStone = new ImageIcon("images/white_stone.png");
-
-        // use this path if you run in any Java IDE: images/black_stone.png
 
         // Initialize the board panel
         boardPanel = new BoardPanel(this);
@@ -264,8 +262,6 @@ class Gomo {
                     }else{
                         sendMove(x, y, 1, 0);
                     }
-//                    System.out.println("FIRST CLICK: " + isPlayer1Turn);
-//                    System.out.println("after CLICK: " + isPlayer1Turn);
 
                 } else if (currentPlayer == 2 && isPlayer2Turn) {
                     ((BoardPanel) e.getSource()).updateBoard(x, y, 2, 2);

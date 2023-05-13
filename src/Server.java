@@ -1,7 +1,7 @@
 // CS-UY 3913: Java and Web Design - Final Project
 // Team member: Tianzuo Liu(tl3119@nyu.edu), Tianyi Zhang(tz2020@nyu.edu)
 
-package Gomokuuu;
+package src;
 
 import java.io.IOException;
 import java.io.PrintStream;
