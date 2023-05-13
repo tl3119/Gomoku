@@ -87,7 +87,9 @@ class Gomo {
                 }).start();
             }    
             new Thread(new MoveReceiver()).start();
-        } catch (IOException ignored) {
+        } catch (IOException e) {
+            System.out.println("Server connection error: " + e.getMessage());
+            JOptionPane.showMessageDialog(null, "Server connection error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
